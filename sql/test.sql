@@ -1,4 +1,4 @@
-USE hardcore_test;
+USE courtcanva_test;
 
 DROP TABLE IF EXISTS vendor;
 CREATE TABLE vendor
