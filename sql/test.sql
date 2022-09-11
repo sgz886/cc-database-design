@@ -1,74 +1,85 @@
 USE hardcore_test;
 
-DROP TABLE IF EXISTS `hcas_userinfo`;
-
-CREATE TABLE `hcas_userinfo`
+DROP TABLE IF EXISTS vendor;
+CREATE TABLE vendor
 (
     `id`          bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    `username`    varchar(64)         NOT NULL COMMENT 'user name',
+    `email`       varchar(64)         NOT NULL,
     `password`    varchar(64)         NOT NULL,
     `salt`        varchar(50)         NOT NULL,
     `create_time` datetime            NOT NULL,
     `update_time` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY `pk_id` (`id`),
-    UNIQUE KEY `uk_username` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+    PRIMARY KEY `vendor_id` (`id`),
+    UNIQUE KEY `vendor_email` (`email`)
+) ENGINE = InnoDB
+  AUTO_INCREMENT = 1
+  DEFAULT CHARSET = utf8;
 
+DROP TABLE IF EXISTS vendor_detail;
+CREATE TABLE vendor_detail
+(
+    `id`             bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `contact_name`   varchar(100)        NOT NULL,
+    `company_name`   varchar(200)        NOT NULL,
+    `ABN`            bigint(50) unsigned,
+    `account_name`   varchar(100),
+    `account_number` bigint(50) unsigned,
+    `BSB`            varchar(6),
+    `card_number`    varchar(50),
 
-DROP TABLE IF EXISTS `hcas_tag`;
-CREATE TABLE `hcas_tag`
+    PRIMARY KEY `vendor_detail_id` (`id`),
+    FOREIGN KEY (`user_id`) REFERENCES customer (`id`)
+
+);
+
+DROP TABLE IF EXISTS quotation;
+CREATE TABLE quotation
 (
     `id`          bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    `description` varchar(50)         NOT NULL,
+    `unit_price`  decimal(18, 2)      NOT NULL DEFAULT '0.00',
+    `amount`      int(8)              NOT NULL DEFAULT '1',
+    `total_price` decimal(18, 2)      NOT NULL DEFAULT '0.00',
+    `create_time` datetime            NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `user_id`     bigint(20) unsigned NOT NULL,
-    `status`      tinyint(1) unsigned NOT NULL COMMENT '0-> disabled, 1-> enabled',
-    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `update_time` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY `pk_id` (`id`),
-    KEY `idx_uid` (`user_id`),
-    FOREIGN KEY (`user_id`) REFERENCES hcas_userinfo (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+    `valid`       boolean             NOT NULL DEFAULT 1 COMMENT '0-> deleted 1-> working',
+    `active`      boolean             NOT NULL DEFAULT 0 COMMENT '0-> inactive, 1-> active',
+    `vendor_id`   bigint(20) unsigned,
 
-DROP TABLE IF EXISTS `hcas_record`;
-CREATE TABLE `hcas_record`
+    PRIMARY KEY `quotation_id` (`id`),
+    KEY `total_price` (`total_price`),
+    FOREIGN KEY (`user_id`) REFERENCES customer (`id`),
+    FOREIGN KEY (`vendor_id`) REFERENCES vendor (`id`)
+);
+
+DROP TABLE IF EXISTS `order`;
+CREATE TABLE `order`
 (
-    `id`          bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    `amount`      decimal(18,2)       NOT NULL DEFAULT '0.00',
-    `note`        varchar(200)        DEFAULT NULL,
-    `category`    tinyint(1) unsigned NOT NULL COMMENT '0-> outcome, 1-> income',
-    `status`      tinyint(1) unsigned NOT NULL COMMENT '0-> disabled, 1-> enabled',
-    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `update_time` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-    `user_id`     bigint(20) unsigned NOT NULL,
-    PRIMARY KEY `pk_id` (`id`),
-    KEY `user_key` (`user_id`),
-    FOREIGN KEY (`user_id`) REFERENCES hcas_userinfo (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+    `id`             bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `quotation_id`   bigint(20) unsigned NOT NULL,
+    `payment_status` boolean             NOT NULL COMMENT '0-> unpaid, 1-> paid',
+    `order_progress` tinyint(1)          NOT NULL COMMENT '0->wait for vendor  1->vendor accepted 2->vendor preparing 3-> vendor dispaching 4-> installing 5->wait for acceptance 6-> finish',
+    `create_time`    datetime            NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `update_time`    datetime                     DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+    `user_id`        bigint(20) unsigned NOT NULL,
+    `vendor_id`      bigint(20) unsigned NOT NULL,
+    PRIMARY KEY `order_id` (`id`),
+    FOREIGN KEY (`quotation_id`) REFERENCES vendor (`id`)
+);
 
-
-INSERT INTO hcas_tag(description, user_id, status) VALUES ('eat', 1, 1);
-
-INSERT INTO hcas_tag(description, user_id, status) VALUES ('playing', 1, 1);
-
-INSERT INTO hcas_tag(description, user_id, status) VALUES ('playing', 232, 1);
-select * from hcas_tag;
-
-
-DROP TABLE IF EXISTS `hcas_record_tag_mapping`;
-CREATE TABLE `hcas_record_tag_mapping`
+DROP TABLE IF EXISTS order_detail;
+CREATE TABLE order_detail
 (
-    `id`          bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    `record_id`   bigint(20) unsigned NOT NULL,
-    `tag_id`  bigint(20) unsigned NOT NULL,
-    `status`      tinyint(1) unsigned NOT NULL COMMENT '0-> disabled, 1-> enabled',
-    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `update_time` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY `pk_id` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-
-
-
-
+    `id`                     bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `order_description`      varchar(100)  DEFAULT NULL,
+    `order_specification`    varchar(1000) DEFAULT NULL,
+    `order_customer_comment` varchar(1000) DEFAULT NULL,
+    `order_vendor_note`      varchar(1000) DEFAULT NULL,
+    `order_id`               bigint(20) unsigned NOT NULL,
+    PRIMARY KEY `od_id` (`id`),
+    FOREIGN KEY (`order_id`) REFERENCES vendor (`id`)
+) ENGINE = InnoDB
+  AUTO_INCREMENT = 1
+  DEFAULT CHARSET = utf8;
 
 
 
